@@ -7,7 +7,7 @@ defmodule KMWeb.KMMessage do
     ~H"""
     <div class={set_dialogue_style(@message.sender)}>
       <span class="font-bold"><%= get_sender(@message.sender) %>:</span>
-      <span :for={c <- @message.content}><%= c.text %></span>
+      <span :for={c <- @message.content} class={underline_style(c.source_id)}><%= c.text %></span>
     </div>
     """
   end
@@ -21,5 +21,12 @@ defmodule KMWeb.KMMessage do
 
   def set_dialogue_style(2) do
     "text-black my-2"
+  end
+
+  def underline_style(source_id) do
+    case source_id do
+      nil -> ""
+      _ -> "underline decoration-dotted hover:decoration-dashed hover:decoration-brand "
+    end
   end
 end

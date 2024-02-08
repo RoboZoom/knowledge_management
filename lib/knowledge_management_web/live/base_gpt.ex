@@ -4,7 +4,6 @@ defmodule KMWeb.BaseGPTLive do
 
   alias KMWeb.Message
   alias KMWeb.MessageContent
-  alias KMWeb.Source
 
   import KMWeb.KMMessage
   import KMWeb.Filter
@@ -12,16 +11,14 @@ defmodule KMWeb.BaseGPTLive do
   def mount(_params, _session, socket) do
     KMWeb.Endpoint.subscribe("chats")
 
-    sources = [
-      %Source{id: 1, author: "Bart Simpson", title: "How to salute your shorts"},
-      %Source{id: 2, author: "Homer Simpson", title: "How to eat a donut"}
-    ]
+    sources = []
 
     {:ok,
      socket
      |> reset_chat()
      |> assign(page_title: "Chester Bot")
-     |> assign(sources: sources)}
+     |> assign(sources: sources)
+     |> assign(messages: [])}
   end
 
   def render(assigns) do
@@ -29,15 +26,17 @@ defmodule KMWeb.BaseGPTLive do
     <div class="flex w-full flex-col items-stretch justify-items-center">
       <div class="min-h-150">
         <div class="flex items-start justify-items-stretch">
-          <.simple_form for={@form} phx-submit="save" phx-validate="validate" class="w-2/3">
+          <.simple_form for={@form} phx-submit="save" phx-validate="validate" class="w-1/2">
             <.input
               type="select"
               label="Choose your model/dataset"
               field={@form[:model]}
               options={[{"CCPGPT", :china}, {"Policy Analysis", :policy}]}
             />
-            <div class="my-4">
+            <div class="my-4 flex gap-8">
               <.button type="button" phx-click="add_filter">Add Filter</.button>
+              <.button type="button" phx-click="demo">Demo Prompt</.button>
+              <.button type="button" phx-click="demo-2">Demo Prompt Two</.button>
             </div>
             <div class="my-4">
               <fieldset class="flex flex-col gap-2">
@@ -54,17 +53,18 @@ defmodule KMWeb.BaseGPTLive do
             <div>
               <.input type="text" field={@form[:submission]} />
             </div>
-            <div class="py-4">
+            <div class="py-4 flex gap-8">
               <.button>Submit</.button>
               <.button type="button" phx-click="reset_chat">Reset Chat</.button>
+              <.button type="button" phx-click="sources_only">Source Search</.button>
             </div>
           </.simple_form>
-          <div class="px-6">
-            <.heading2>Sources</.heading2>
+          <div class="px-6 w-1/2">
+            <%!-- <.heading2>Sources</.heading2> --%>
             <.table id="sources" rows={@sources}>
-              <:col :let={source} label="Author"><%= source.author %></:col>
               <:col :let={source} label="Title"><%= source.title %></:col>
-              <:col :let={source} label="Published Date"><%= source.published_date %></:col>
+              <:col :let={source} label="Region"><%= source.region %></:col>
+              <:col :let={source} label="Source Type"><%= source.type %></:col>
             </.table>
           </div>
         </div>
@@ -85,27 +85,43 @@ defmodule KMWeb.BaseGPTLive do
           |> assign(waiting: true)
           |> reset_form()
 
-        KM.Output.submit_request(data)
+        response = KM.Output.submit_request(data)
 
-        {:noreply, socket}
+        source_ids =
+          Enum.map(response, &Map.get(&1, "source", nil))
+          |> MapSet.new()
+
+        sources = KM.GetSources.get_sources(MapSet.to_list(source_ids))
+
+        new_messages =
+          socket.assigns.messages
+          |> add_message_line(%Message{
+            sender: 1,
+            content: [%MessageContent{text: params["submission"]}]
+          })
+          |> add_message_line(%Message{
+            sender: 2,
+            content:
+              Enum.map(
+                response,
+                &%MessageContent{
+                  text: Map.fetch!(&1, "text"),
+                  source_id: Map.fetch!(&1, "source")
+                }
+              )
+          })
+
+        {:noreply,
+         socket
+         |> assign(messages: new_messages)
+         |> assign(sources: sources)}
 
       {:error, changeset} ->
         {:noreply, assign(socket, form: to_form(changeset) |> IO.inspect())}
     end
-
-    # m =
-    #   socket.assigns.messages
-    #   |> add_message_line(%Message{sender: 1, content: [%MessageContent{text: params["text"]}]})
-    #   |> add_message_line(%Message{sender: 2, content: [%MessageContent{text: "Got it!"}]})
-
-    # {:noreply,
-    #  socket
-    #  |> assign(messages: m)
-    #  |> reset_form()
-    #  |> IO.inspect()}
   end
 
-  def handle_event("chat_received", params, socket) do
+  def handle_info("chat_received", params, socket) do
     new_messages =
       socket.assigns.messages
       |> add_message_line(%Message{
@@ -113,7 +129,44 @@ defmodule KMWeb.BaseGPTLive do
         content: [%MessageContent{text: params.text, source_id: params.source_id}]
       })
 
+    IO.inspect("Message Received!")
+
     {:noreply, socket |> assign(messages: new_messages)}
+  end
+
+  def handle_event("sources_only", _params, socket) do
+    socket =
+      put_flash(socket, :info, "Submitted successfully")
+      |> assign(waiting: true)
+      |> reset_form()
+
+    # response = KM.Output.submit_request(data)
+
+    # source_ids =
+    #   Enum.map(response, &Map.get(&1, "source", nil))
+    #   |> MapSet.new()
+
+    sources = KM.GetSources.get_source_list()
+
+    {:noreply, socket |> assign(sources: sources)}
+
+    # new_messages =
+    #   socket.assigns.messages
+    #   |> add_message_line(%Message{
+    #     sender: 1,
+    #     content: [%MessageContent{text: params["submission"]}]
+    #   })
+    #   |> add_message_line(%Message{
+    #     sender: 2,
+    #     content:
+    #       Enum.map(
+    #         response,
+    #         &%MessageContent{
+    #           text: Map.fetch!(&1, "text"),
+    #           source_id: Map.fetch!(&1, "source")
+    #         }
+    #       )
+    #   })
   end
 
   def handle_event("reset_chat", _params, socket) do
@@ -163,6 +216,31 @@ defmodule KMWeb.BaseGPTLive do
     {:noreply, socket}
   end
 
+  def handle_event("demo", _params, socket) do
+    c =
+      Form.changeset(%Form{}, %{})
+      |> Ecto.Changeset.put_change(:submission, "Methods of levying anti-dumping duties ")
+      |> to_form()
+
+    {:noreply,
+     socket
+     |> assign(form: c)}
+  end
+
+  def handle_event("demo-2", _params, socket) do
+    c =
+      Form.changeset(%Form{}, %{})
+      |> Ecto.Changeset.put_change(
+        :submission,
+        "Give me a history of PLAN expansion across the South China Sea and beyond going back 25 years. Include a list of relevant sources. Give specific examples of vessel acquisition and development."
+      )
+      |> to_form()
+
+    {:noreply,
+     socket
+     |> assign(form: c)}
+  end
+
   defp reset_chat(socket) do
     new_id = Ecto.UUID.generate()
 
@@ -170,6 +248,8 @@ defmodule KMWeb.BaseGPTLive do
 
     socket
     |> assign(chat_id: new_id)
+    |> assign(messages: [])
+    |> assign(sources: [])
     |> reset_form()
   end
 
@@ -188,7 +268,8 @@ defmodule KMWeb.BaseGPTLive do
     socket
     |> assign(form: form)
     |> assign(waiting: false)
-    |> assign(messages: [])
+
+    # |> assign(messages: [])
   end
 
   defp clear_text(socket) do
