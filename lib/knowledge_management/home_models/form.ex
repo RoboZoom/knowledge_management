@@ -4,21 +4,22 @@ defmodule KM.HomeModels.Form do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "form" do
-    field :submission, Ecto.Enum, values: [:gt, :lt, :eq, :not]
+    field :submission, :string
+    field :model, :string
 
     embeds_many :filters, Filter do
       field :comparator, Ecto.Enum, values: [:gt, :lt, :eq, :not]
       field :field, :string
       field :parameter, :string
-      field :model, :string
       field :delete, :boolean, virtual: true
     end
   end
 
-  def changeset(filter, attr) do
-    filter
-    |> cast(attr, [:submission])
+  def changeset(form, attr) do
+    form
+    |> cast(attr, [:submission, :model])
     |> cast_embed(:filters, with: &filter_changeset/2)
+    |> validate_required([:submission, :model])
 
     # |> validate_required([ ])
   end
@@ -26,8 +27,8 @@ defmodule KM.HomeModels.Form do
   def filter_changeset(obj, attrs) do
     c =
       obj
-      |> cast(attrs, [:comparator, :field, :parameter, :model, :delete])
-      |> validate_required([:comparator, :field, :model])
+      |> cast(attrs, [:comparator, :field, :parameter, :delete])
+      |> validate_required([:comparator, :field])
 
     if get_change(c, :delete) do
       %{c | action: :delete}

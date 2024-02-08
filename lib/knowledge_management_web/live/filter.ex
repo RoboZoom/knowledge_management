@@ -15,7 +15,7 @@ defmodule KMWeb.Filter do
         options={[{"Equals", :eq}, {"Greater Than", :gt}, {"Less Than", :lt}]}
       />
       <.input type="text" field={@item[:parameter]} />
-      <.button type="button" phx-click="delete_filter" phx-value-index={@item.index} }>
+      <.button type="button" phx-click="delete_filter" phx-value-index={@item.index}>
         Delete
       </.button>
     </div>

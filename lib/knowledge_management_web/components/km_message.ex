@@ -1,9 +1,6 @@
 defmodule KMWeb.KMMessage do
   use Phoenix.Component
 
-  alias KMWeb.Message
-  alias KMWeb.MessageContent
-
   attr :message, :any, required: true
 
   def km_message(assigns) do
