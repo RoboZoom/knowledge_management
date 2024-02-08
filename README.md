@@ -7,14 +7,14 @@ Dependencies needed:
 
 ## Setup
 
-Datbase Setup:
+Database Setup:
 
 - `docker pull pgvector/pgvector:pg16`
 - `docker run -d --name pgvector -p 5432:5432 -e POSTGRES_PASSWORD=password pgvector/pgvector:pg16`
+- Run `mix setup` to install application dependencies and configure the database
 
-To start your Phoenix server:
+Run the Server:
 
-- Run `mix setup` to install and setup dependencies
-- Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+- `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
