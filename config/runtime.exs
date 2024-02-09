@@ -22,11 +22,12 @@ end
 
 if config_env() == :prod do
   database_url =
-    System.get_env("DATABASE_URL") ||
-      raise """
-      environment variable DATABASE_URL is missing.
-      For example: ecto://USER:PASS@HOST/DATABASE
-      """
+    System.get_env("DATABASE_URL") || "www.sample.com"
+
+  # raise """
+  # environment variable DATABASE_URL is missing.
+  # For example: ecto://USER:PASS@HOST/DATABASE
+  # """
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
@@ -43,18 +44,20 @@ if config_env() == :prod do
   # variable instead.
   secret_key_base =
     System.get_env("SECRET_KEY_BASE") ||
-      raise """
-      environment variable SECRET_KEY_BASE is missing.
-      You can generate one by calling: mix phx.gen.secret
-      """
+      "AMDP/SMZVQuLfYQ3/eWao8CqokC3YyKxGXSQygNyPKPXP9KFN7BuppP/umDYRT41"
 
-  host = System.get_env("PHX_HOST") || "example.com"
+  # raise """
+  # environment variable SECRET_KEY_BASE is missing.
+  # You can generate one by calling: mix phx.gen.secret
+  # """
+
+  # host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :knowledge_management, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
   config :knowledge_management, KMWeb.Endpoint,
-    url: [host: host, port: 443, scheme: "https"],
+    # url: [host: host, port: 443, scheme: "https"],
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.

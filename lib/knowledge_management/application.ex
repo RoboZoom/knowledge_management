@@ -9,7 +9,7 @@ defmodule KM.Application do
   def start(_type, _args) do
     children = [
       KMWeb.Telemetry,
-      KM.Repo,
+      # KM.Repo,
       {DNSCluster,
        query: Application.get_env(:knowledge_management, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: KM.PubSub},
