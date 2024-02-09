@@ -21,5 +21,6 @@ Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 Release Information
 
-- `mix release`
-- `docker build --tag=b11:amd --platform linux/amd64 .`
+- Build the Release: `mix release`
+- Build the Image: `docker build --tag=b11:amd --platform linux/amd64 .`
+- Compress the Image: `docker save bravo11_chester:latest | gzip > bravo11_chester_latest.tar.gz`
