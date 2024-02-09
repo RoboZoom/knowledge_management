@@ -18,3 +18,8 @@ Run the Server:
 - `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+
+Release Information
+
+- `mix release`
+- `docker build --tag=b11:amd --platform linux/amd64 .`
